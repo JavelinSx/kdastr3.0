@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Кадастровая БД{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <!-- Наши стили -->
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/tables.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/forms.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modals.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Кнопка toggle для мобильных устройств -->
+    <button class="sidebar-toggle d-lg-none" type="button" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Боковая панель -->
+            <nav class="col-lg-2 sidebar" id="sidebar">
+                <div class="text-center text-white mb-4">
+                    <h4><i class="fas fa-map-marked-alt"></i> Кадастр</h4>
+                </div>
+                <div class="nav flex-column">
+                    <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" 
+                       href="{{ url_for('main.index') }}">
+                        <i class="fas fa-users"></i> База клиентов
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'main.add_client' %}active{% endif %}" 
+                       href="{{ url_for('main.add_client') }}">
+                        <i class="fas fa-user-plus"></i> Добавить клиента
+                    </a>
+                    <a class="nav-link {% if request.endpoint == 'main.settings' %}active{% endif %}" 
+                       href="{{ url_for('main.settings') }}">
+                        <i class="fas fa-cogs"></i> Настройки
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Основной контент -->
+            <main class="col-lg-10 main-content">
+                <div class="container-fluid py-4">
+                    <!-- Уведомления -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    <div class="alerts-container">
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' }}"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Общие скрипты -->
+    <script>
+        // Проверяем jQuery
+        if (typeof $ !== 'undefined') {
+            console.log('✅ jQuery загружен успешно!');
+        } else {
+            console.error('❌ jQuery НЕ загружен!');
+        }
+        
+        // Функция для переключения боковой панели на мобильных устройствах
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+        
+        // Закрытие боковой панели при клике вне её на мобильных устройствах
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggleButton = document.querySelector('.sidebar-toggle');
+            
+            if (window.innerWidth <= 991.98) {
+                if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+        
+        // Автоматическое скрытие алертов через 5 секунд
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+        
+        // Глобальные функции для обратной совместимости
+        function showReady() {
+            console.log('Показать готовые');
+        }
+        
+        function showProblematic() {
+            console.log('Показать проблемные');
+        }
+        
+        function filterByDate(date) {
+            console.log('Фильтр по дате:', date);
+        }
+        
+        // Функция для показа loading состояния кнопки
+        function setButtonLoading(button, loading, originalText) {
+            if (loading) {
+                button.dataset.originalText = originalText || button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
+                button.disabled = true;
+            } else {
+                button.innerHTML = button.dataset.originalText || originalText;
+                button.disabled = false;
+            }
+        }
+        
+        // Функция для показа уведомлений
+        function showNotification(message, type = 'info') {
+            const alertsContainer = document.querySelector('.alerts-container') || 
+                document.querySelector('.container-fluid');
+            
+            const iconMap = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            
+            const alertClass = type === 'error' ? 'danger' : type;
+            const icon = iconMap[type] || 'info-circle';
+            
+            const alertElement = document.createElement('div');
+            alertElement.className = `alert alert-${alertClass} alert-dismissible fade show`;
+            alertElement.setAttribute('role', 'alert');
+            alertElement.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            `;
+            
+            alertsContainer.insertBefore(alertElement, alertsContainer.firstChild);
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(function() {
+                const bsAlert = new bootstrap.Alert(alertElement);
+                bsAlert.close();
+            }, 5000);
+        }
+        
+        // Функция для подтверждения действий
+        function confirmAction(message, callback, options = {}) {
+            const defaultOptions = {
+                title: 'Подтверждение',
+                confirmText: 'Да',
+                cancelText: 'Отмена',
+                type: 'warning'
+            };
+            
+            const settings = Object.assign(defaultOptions, options);
+            
+            if (confirm(`${settings.title}\n\n${message}`)) {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+                return true;
+            }
+            return false;
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

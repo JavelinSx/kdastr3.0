@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}База клиентов{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-users"></i> База клиентов</h4>
+            </div>
+            <div class="card-body">
+                <!-- Поиск и фильтры -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="global-search" placeholder="Поиск по клиентам...">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="status-filter">
+                            <option value="">Все статусы</option>
+                            <option value="Готова">Готова</option>
+                            <option value="Разработка">Разработка</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="work-filter">
+                            <option value="">Съёмка</option>
+                            <option value="Готова">Готова</option>
+                            <option value="Ожидает выезд">Ожидает</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-secondary" onclick="clearAllFilters()">
+                            <i class="fas fa-times"></i> Очистить
+                        </button>
+                        <a href="{{ url_for('main.add_client') }}" class="btn btn-primary ms-2">
+                            <i class="fas fa-plus"></i> Добавить клиента
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Таблица клиентов -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="clients-table">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Разработка</th>
+                                <th>Съёмка</th>
+                                <th>Нас.пункт</th>
+                                <th>Адрес</th>
+                                <th>Фамилия</th>
+                                <th>Имя</th>
+                                <th>Телефон</th>
+                                <th>Услуга</th>
+                                <th>Дата записи</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                            <tr>
+                                <td>
+                                    {% if client.work_info %}
+                                        {% if client.work_info.status == 1 %}
+                                            <span class="badge bg-success">Готова</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Разработка</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Не указан</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if client.work_info %}
+                                        {% if client.work_info.work == 1 %}
+                                            <span class="badge bg-success">Готова</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Ожидает выезд</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Не указан</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ client.address.city_info.city_name if client.address and client.address.city_info else 'Не указан' }}</td>
+                                <td>{{ client.address.address if client.address else 'Не указан' }}</td>
+                                <td>{{ client.sur_name }}</td>
+                                <td>{{ client.name }}</td>
+                                <td>{{ client.telefone or '' }}</td>
+                                <td>{{ client.service_name }}</td>
+                                <td>{{ client.created_at.strftime('%d.%m.%Y') if client.created_at else '' }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                                onclick="openFolder({{ client.id }})" 
+                                                title="Открыть папку">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="editClient({{ client.id }})" 
+                                                title="Редактировать">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteClient({{ client.id }})" 
+                                                title="Удалить">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Форма для удаления (скрытая) -->
+<form id="delete-form" method="POST" style="display: none;">
+    <input type="hidden" name="_method" value="DELETE">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Загружается clients.html JavaScript');
+
+// Функция для добавления tooltips к обрезанному тексту
+function addTableTooltips() {
+    const tableCells = document.querySelectorAll('#clients-table td');
+    
+    tableCells.forEach(cell => {
+        // Пропускаем столбец с кнопками и бейджами
+        if (cell.querySelector('.btn-group') || cell.querySelector('.badge')) {
+            return;
+        }
+        
+        // Получаем текст ячейки
+        const cellText = cell.textContent.trim();
+        
+        // Проверяем, обрезан ли текст
+        if (cell.scrollWidth > cell.clientWidth && cellText.length > 0) {
+            cell.setAttribute('title', cellText);
+        }
+    });
+}
+
+// Функция для добавления tooltips к бейджам с длинным текстом
+function addBadgeTooltips() {
+    const badges = document.querySelectorAll('#clients-table .badge');
+    
+    badges.forEach(badge => {
+        const badgeText = badge.textContent.trim();
+        if (badgeText.length > 8) { // Если текст длиннее 8 символов
+            const parentCell = badge.closest('td');
+            if (parentCell) {
+                parentCell.setAttribute('title', badgeText);
+                parentCell.classList.add('tooltip-instant'); // Быстрый показ
+            }
+        }
+    });
+}
+
+// ЕДИНСТВЕННАЯ функция инициализации DataTable с русской локализацией
+function initializeClientTable() {
+    if (typeof $ === 'undefined') {
+        console.log('jQuery еще не загружен, ждем...');
+        setTimeout(initializeClientTable, 100);
+        return;
+    }
+    
+    console.log('jQuery найден, инициализируем таблицу');
+    
+    try {
+        if ($('#clients-table').length > 0) {
+            window.clientsTable = $('#clients-table').DataTable({
+                // Русская локализация
+                "language": {
+                    "processing": "Подождите...",
+                    "search": "Поиск:",
+                    "lengthMenu": "Показать _MENU_ записей",
+                    "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
+                    "infoEmpty": "Записи с 0 до 0 из 0 записей",
+                    "infoFiltered": "(отфильтровано из _MAX_ записей)",
+                    "infoPostFix": "",
+                    "loadingRecords": "Загрузка записей...",
+                    "zeroRecords": "Записи отсутствуют.",
+                    "emptyTable": "В таблице отсутствуют данные",
+                    "paginate": {
+                        "first": "Первая",
+                        "previous": "Предыдущая",
+                        "next": "Следующая",
+                        "last": "Последняя"
+                    },
+                    "aria": {
+                        "sortAscending": ": активировать для сортировки столбца по возрастанию",
+                        "sortDescending": ": активировать для сортировки столбца по убыванию"
+                    }
+                },
+                
+                // Настройка расположения элементов
+                "dom": '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
+                       '<"row"<"col-sm-12"tr>>' +
+                       '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+                
+                // Основные настройки
+                "pageLength": 25,
+                "order": [[8, "desc"]],
+                "columnDefs": [
+                    { "orderable": false, "targets": 9 }
+                ],
+                
+                // Варианты количества записей
+                "lengthMenu": [
+                    [10, 25, 50, 100, -1],
+                    ["10", "25", "50", "100", "Все"]
+                ],
+                
+                // Настройки отображения
+                "searching": true,
+                "lengthChange": true,
+                "paging": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                
+                "drawCallback": function() {
+                    setTimeout(() => {
+                        addTableTooltips();
+                        addBadgeTooltips();
+                    }, 100);
+                }
+            });
+            
+            // Глобальный поиск
+            $('#global-search').on('keyup', function() {
+                window.clientsTable.search(this.value).draw();
+            });
+            
+            // Фильтр по статусу
+            $('#status-filter').on('change', function() {
+                window.clientsTable.column(0).search(this.value).draw();
+            });
+            
+            // Фильтр по работе
+            $('#work-filter').on('change', function() {
+                window.clientsTable.column(1).search(this.value).draw();
+            });
+            
+            // Добавляем tooltips при первой загрузке
+            setTimeout(() => {
+                addTableTooltips();
+                addBadgeTooltips();
+            }, 300);
+            
+            console.log('DataTable инициализирован с русской локализацией');
+        }
+    } catch (error) {
+        console.error('Ошибка инициализации DataTable:', error);
+    }
+}
+
+// Запускаем инициализацию
+document.addEventListener('DOMContentLoaded', function() {
+    initializeClientTable();
+});
+
+// Простые функции без jQuery
+function openFolder(clientId) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    // Открываем папку
+    window.open(`/client/${clientId}/open-folder`, '_blank');
+    
+    // Восстанавливаем кнопку
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }, 2000);
+}
+
+function deleteClient(clientId) {
+    if (confirm('Вы уверены, что хотите удалить этого клиента?')) {
+        const form = document.getElementById('delete-form');
+        if (form) {
+            form.action = `/client/${clientId}/delete`;
+            form.submit();
+        }
+    }
+}
+
+function editClient(clientId) {
+    window.location.href = `/client/${clientId}`;
+}
+
+function showReady() {
+    if (window.clientsTable) {
+        window.clientsTable.column(0).search('Готова').draw();
+    }
+}
+
+function showProblematic() {
+    if (window.clientsTable) {
+        window.clientsTable.column(0).search('Разработка').draw();
+    }
+}
+
+function clearAllFilters() {
+    const inputs = ['global-search', 'status-filter', 'work-filter'];
+    inputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = '';
+    });
+    
+    if (window.clientsTable) {
+        window.clientsTable.search('').columns().search('').draw();
+    }
+}
+
+// Дополнительная функция для ручного добавления tooltips к конкретным ячейкам
+function addCustomTooltip(selector, tooltipText) {
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(element => {
+        element.setAttribute('title', tooltipText);
+        element.classList.add('tooltip-instant');
+    });
+}
+
+// Функция для очистки всех tooltips
+function clearAllTooltips() {
+    const elementsWithTitle = document.querySelectorAll('#clients-table [title]');
+    elementsWithTitle.forEach(element => {
+        element.removeAttribute('title');
+        element.classList.remove('tooltip-instant', 'tooltip-dark', 'tooltip-gradient');
+    });
+}
+
+// Экспортируем функции для использования в консоли браузера (для отладки)
+window.tableTooltips = {
+    add: addTableTooltips,
+    addBadge: addBadgeTooltips,
+    addCustom: addCustomTooltip,
+    clear: clearAllTooltips
+};
+
+console.log('clients.html JavaScript загружен');
+</script>
+{% endblock %}

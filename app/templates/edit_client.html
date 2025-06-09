@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать клиента - {{ client.full_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-user-edit"></i> Редактирование клиента: {{ client.full_name }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="edit-client-form">
+                    <!-- Услуга -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-cog"></i> Услуга</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="service" class="form-label">Услуга <span class="text-danger">*</span></label>
+                                <select class="form-select" id="service" name="service" required>
+                                    <option value="0" {{ 'selected' if client.service == 0 else '' }}>Акт обследования</option>
+                                    <option value="1" {{ 'selected' if client.service == 1 else '' }}>Выдел</option>
+                                    <option value="2" {{ 'selected' if client.service == 2 else '' }}>Вынос</option>
+                                    <option value="3" {{ 'selected' if client.service == 3 else '' }}>Образование</option>
+                                    <option value="4" {{ 'selected' if client.service == 4 else '' }}>Объединение</option>
+                                    <option value="5" {{ 'selected' if client.service == 5 else '' }}>Перераспределение</option>
+                                    <option value="6" {{ 'selected' if client.service == 6 else '' }}>Раздел</option>
+                                    <option value="7" {{ 'selected' if client.service == 7 else '' }}>Технический план</option>
+                                    <option value="8" {{ 'selected' if client.service == 8 else '' }}>Уточнение</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Адрес -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-map-marker-alt"></i> Адрес работ</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="city" class="form-label">Населенный пункт <span class="text-danger">*</span></label>
+                                <select class="form-select" id="city" name="city" required>
+                                    {% for city in cities %}
+                                    <option value="{{ city.id }}" {{ 'selected' if client.address and client.address.id_city == city.id else '' }}>
+                                        {{ city.city_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Адрес <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="address" name="address" 
+                                       value="{{ client.address.address if client.address else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Личные данные -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-user"></i> Личные данные</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="sur_name" class="form-label">Фамилия <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="sur_name" name="sur_name" 
+                                       value="{{ client.sur_name }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="name" class="form-label">Имя <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ client.name }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="middle_name" class="form-label">Отчество</label>
+                                <input type="text" class="form-control" id="middle_name" name="middle_name" 
+                                       value="{{ client.middle_name or '' }}">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="telefone" class="form-label">Телефон</label>
+                                <input type="tel" class="form-control" id="telefone" name="telefone" 
+                                       value="{{ client.telefone or '' }}" pattern="[0-9]{11}" maxlength="11">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Папка клиента -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-folder"></i> Управление папкой</h5>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label for="path_folder" class="form-label">Путь до папки</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="path_folder" name="path_folder" 
+                                           value="{{ client.path_folder or '' }}" 
+                                           placeholder="Введите путь к папке клиента">
+                                    <button type="button" class="btn btn-outline-success" onclick="openFolder()" 
+                                            title="Открыть папку в файловом менеджере">
+                                        <i class="fas fa-folder-open"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="createNewFolder()"
+                                            title="Создать новую папку">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <span id="folder-status" class="text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i> Проверяем статус папки...
+                                    </span>
+                                </div>
+                                
+                                <!-- Опции для работы с папкой -->
+                                <div class="mt-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="move_files_on_change" 
+                                               title="Переместить файлы при изменении пути">
+                                        <label class="form-check-label" for="move_files_on_change">
+                                            <small>Переместить файлы при изменении пути</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Паспортные данные -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-id-card"></i> Паспортные данные</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="series_pass" class="form-label">Серия и номер паспорта</label>
+                                <input type="text" class="form-control" id="series_pass" name="series_pass" 
+                                       value="{{ client.doc_info.series_pass if client.doc_info else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date_pass" class="form-label">Дата выдачи</label>
+                                <input type="text" class="form-control" id="date_pass" name="date_pass" 
+                                       value="{{ client.doc_info.date_pass if client.doc_info else '' }}"
+                                       placeholder="ДД.ММ.ГГГГ">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-8">
+                                <label for="info_pass" class="form-label">Кем выдан</label>
+                                <input type="text" class="form-control" id="info_pass" name="info_pass" 
+                                       value="{{ client.doc_info.info_pass if client.doc_info else '' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="snils" class="form-label">СНИЛС</label>
+                                <input type="text" class="form-control" id="snils" name="snils" 
+                                       value="{{ client.doc_info.snils if client.doc_info else '' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Дополнительные данные для документов -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-file-alt"></i> Дополнительные данные</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="date_birthday" class="form-label">Дата рождения</label>
+                                <input type="text" class="form-control" id="date_birthday" name="date_birthday" 
+                                       value="{{ client.doc_fill_info.date_birthday if client.doc_fill_info else '' }}"
+                                       placeholder="ДД.ММ.ГГГГ">
+                            </div>
+                            <div class="col-md-8">
+                                <label for="place_residence" class="form-label">Место проживания</label>
+                                <input type="text" class="form-control" id="place_residence" name="place_residence" 
+                                       value="{{ client.doc_fill_info.place_residence if client.doc_fill_info else '' }}">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <label for="extend_work_info" class="form-label">Подробное наименование работ</label>
+                                <input type="text" class="form-control" id="extend_work_info" name="extend_work_info" 
+                                       value="{{ client.doc_fill_info.extend_work_info if client.doc_fill_info else '' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Документы для заполнения -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-file-pdf"></i> Автозаполнение документов</h5>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="approval" name="approval"
+                                           {{ 'checked' if client.doc_fill_info and client.doc_fill_info.approval else '' }}>
+                                    <label class="form-check-label" for="approval">Согласие</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="contract" name="contract"
+                                           {{ 'checked' if client.doc_fill_info and client.doc_fill_info.contract else '' }}>
+                                    <label class="form-check-label" for="contract">Договор подряда</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="contract_agreement" name="contract_agreement"
+                                           {{ 'checked' if client.doc_fill_info and client.doc_fill_info.contract_agreement else '' }}>
+                                    <label class="form-check-label" for="contract_agreement">Акт к договору</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="declaration" name="declaration"
+                                           {{ 'checked' if client.doc_fill_info and client.doc_fill_info.declaration else '' }}>
+                                    <label class="form-check-label" for="declaration">Декларация</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="receipt" name="receipt"
+                                           {{ 'checked' if client.doc_fill_info and client.doc_fill_info.receipt else '' }}>
+                                    <label class="form-check-label" for="receipt">Квитанция</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-info" onclick="fillDocuments()">
+                                    <i class="fas fa-magic"></i> Заполнить выбранные документы
+                                </button>
+                                <div class="form-text mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        При заполнении данные записываются прямо в документы, заменяя шаблоны.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Рабочая информация -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-briefcase"></i> Рабочая информация</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="work" class="form-label">Статус съёмки</label>
+                                <select class="form-select" id="work" name="work">
+                                    <option value="0" {{ 'selected' if client.work_info and client.work_info.work == 0 else '' }}>Ожидает выезд</option>
+                                    <option value="1" {{ 'selected' if client.work_info and client.work_info.work == 1 else '' }}>Готова</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label">Общий статус</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="0" {{ 'selected' if client.work_info and client.work_info.status == 0 else '' }}>Разработка</option>
+                                    <option value="1" {{ 'selected' if client.work_info and client.work_info.status == 1 else '' }}>Готова</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_work" class="form-label">Дата съёмки</label>
+                                <input type="text" class="form-control" id="date_work" name="date_work" 
+                                       value="{{ client.work_info.date_work if client.work_info else '' }}"
+                                       placeholder="ДД.ММ.ГГГГ">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_status" class="form-label">Дата готовности</label>
+                                <input type="text" class="form-control" id="date_status" name="date_status" 
+                                       value="{{ client.work_info.date_status if client.work_info else '' }}"
+                                       placeholder="ДД.ММ.ГГГГ">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="prepayment" name="prepayment"
+                                           {{ 'checked' if client.work_info and client.work_info.prepayment else '' }}>
+                                    <label class="form-check-label" for="prepayment">Предоплата</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="remains" name="remains"
+                                           {{ 'checked' if client.work_info and client.work_info.remains else '' }}>
+                                    <label class="form-check-label" for="remains">Остаток</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-success" onclick="markWorkReady()">
+                                    <i class="fas fa-check"></i> Отметить съёмку готовой
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Дополнительная информация -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-info-circle"></i> Дополнительная информация</h5>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label for="info" class="form-label">Заметки</label>
+                                <textarea class="form-control" id="info" name="info" rows="3">{{ client.work_info.info if client.work_info else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                        <button type="button" class="btn btn-danger me-md-2" onclick="deleteClient()">
+                            <i class="fas fa-trash"></i> Удалить клиента
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить клиента <strong>{{ client.full_name }}</strong>?</p>
+                <p class="text-danger">Это действие нельзя отменить!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="POST" action="{{ url_for('main.delete_client', client_id=client.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Загружается edit_client.html JavaScript');
+
+// ВСЕ переменные и обработчики ТОЛЬКО после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM полностью загружен, начинаем инициализацию');
+    
+    // Проверяем наличие всех ключевых элементов
+    const telefoneField = document.getElementById('telefone');
+    const prepaymentField = document.getElementById('prepayment');
+    const remainsField = document.getElementById('remains');
+    const editForm = document.getElementById('edit-client-form');
+    const pathField = document.getElementById('path_folder');
+    
+    console.log('Проверка элементов:', {
+        telefone: !!telefoneField,
+        prepayment: !!prepaymentField,
+        remains: !!remainsField,
+        form: !!editForm,
+        pathField: !!pathField
+    });
+    
+    // Маска для телефона
+    if (telefoneField) {
+        telefoneField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 11) value = value.slice(0, 11);
+            e.target.value = value;
+        });
+        console.log('✅ Маска телефона подключена');
+    } else {
+        console.log('⚠️ Поле telefone не найдено');
+    }
+
+    // Обработчик предоплаты
+    if (prepaymentField) {
+        prepaymentField.addEventListener('change', function() {
+            const infoField = document.getElementById('info');
+            if (!infoField) {
+                console.log('⚠️ Поле info не найдено');
+                return;
+            }
+            
+            const text = 'Предоплата выплачена в размере 3000 тысяч;';
+            
+            if (this.checked) {
+                if (infoField.value.indexOf(text) === -1) {
+                    infoField.value += (infoField.value ? ' ' : '') + text;
+                }
+            } else {
+                infoField.value = infoField.value.replace(text, '').trim();
+            }
+        });
+        console.log('✅ Обработчик предоплаты подключен');
+    } else {
+        console.log('⚠️ Поле prepayment не найдено');
+    }
+
+    // Обработчик остатка
+    if (remainsField) {
+        remainsField.addEventListener('change', function() {
+            const infoField = document.getElementById('info');
+            if (!infoField) {
+                console.log('⚠️ Поле info не найдено');
+                return;
+            }
+            
+            const text = 'Остаток выплачен в размере 5000 тысяч;';
+            
+            if (this.checked) {
+                if (infoField.value.indexOf(text) === -1) {
+                    infoField.value += (infoField.value ? ' ' : '') + text;
+                }
+            } else {
+                infoField.value = infoField.value.replace(text, '').trim();
+            }
+        });
+        console.log('✅ Обработчик остатка подключен');
+    } else {
+        console.log('⚠️ Поле remains не найдено');
+    }
+
+    // Валидация формы
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            const surnameField = document.getElementById('sur_name');
+            const nameField = document.getElementById('name');
+            
+            let isValid = true;
+            
+            if (surnameField) {
+                if (!surnameField.value.trim()) {
+                    surnameField.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    surnameField.classList.remove('is-invalid');
+                }
+            }
+            
+            if (nameField) {
+                if (!nameField.value.trim()) {
+                    nameField.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    nameField.classList.remove('is-invalid');
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Пожалуйста, заполните обязательные поля (Фамилия, Имя)');
+            }
+        });
+        console.log('✅ Валидация формы подключена');
+    } else {
+        console.log('⚠️ Форма edit-client-form не найдена');
+    }
+
+    // Проверка папки только если есть путь
+    if (pathField) {
+        updateFolderInfo();
+        
+        // Добавляем проверку при изменении пути
+        pathField.addEventListener('input', function() {
+            clearTimeout(window.folderCheckTimeout);
+            window.folderCheckTimeout = setTimeout(updateFolderInfo, 1000);
+        });
+        
+        console.log('✅ Запущена проверка папки');
+    } else {
+        console.log('⚠️ Поле path_folder не найдено');
+    }
+    
+    console.log('✅ Инициализация завершена');
+});
+
+// Все функции объявляем ВНЕ DOMContentLoaded чтобы они были доступны глобально
+
+function markWorkReady() {
+    console.log('Вызвана функция markWorkReady');
+    const workField = document.getElementById('work');
+    const dateWorkField = document.getElementById('date_work');
+    
+    if (workField) {
+        workField.value = '1';
+        console.log('Статус работы изменен на готова');
+    }
+    
+    if (dateWorkField) {
+        const today = new Date().toLocaleDateString('ru-RU');
+        dateWorkField.value = today;
+        console.log('Дата работы установлена:', today);
+    }
+    
+    alert('Статус съёмки изменен на "Готова"');
+}
+
+function fillDocuments() {
+    console.log('Вызвана функция fillDocuments');
+    const docIds = ['declaration', 'approval', 'contract', 'receipt', 'contract_agreement'];
+    const checkedDocs = [];
+    
+    docIds.forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element && element.checked) {
+            checkedDocs.push(id);
+            console.log('Выбран документ:', id);
+        }
+    });
+    
+    if (checkedDocs.length === 0) {
+        alert('Выберите документы для заполнения');
+        return;
+    }
+    
+    const button = event.target;
+    if (!button) {
+        console.log('⚠️ Кнопка не найдена');
+        return;
+    }
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Заполняем документы...';
+    button.disabled = true;
+    
+    const clientId = {{ client.id }};
+    console.log('Отправляем запрос для клиента:', clientId);
+    
+    fetch(`/client/${clientId}/fill-documents`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            documents: checkedDocs
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let message = `Документы успешно заполнены:\n${data.filled_documents.join('\n')}`;
+            if (data.errors && data.errors.length > 0) {
+                message += `\n\nПредупреждения:\n${data.errors.join('\n')}`;
+            }
+            alert(message);
+        } else {
+            alert(`Ошибка при заполнении документов:\n${data.errors.join('\n')}`);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка заполнения документов:', error);
+        alert('Ошибка при заполнении документов: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function openFolder() {
+    console.log('Вызвана функция openFolder');
+    const pathField = document.getElementById('path_folder');
+    if (!pathField || !pathField.value.trim()) {
+        alert('Путь к папке не указан');
+        return;
+    }
+    
+    const clientId = {{ client.id }};
+    const button = event.target ? event.target.closest('button') : null;
+    
+    if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 2000);
+    }
+    
+    console.log('Открываем папку для клиента:', clientId);
+    window.open(`/client/${clientId}/open-folder`, '_blank');
+}
+
+function changePath() {
+    console.log('Функция changePath больше не нужна - путь можно изменить прямо в поле');
+    const pathField = document.getElementById('path_folder');
+    if (pathField) {
+        pathField.focus();
+        pathField.select();
+    }
+}
+
+function createNewFolder() {
+    console.log('Вызвана функция createNewFolder');
+    if (!confirm('Создать новую папку по стандартному пути?')) {
+        return;
+    }
+    
+    const clientId = {{ client.id }};
+    const button = event.target ? event.target.closest('button') : null;
+    
+    if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        fetch(`/client/${clientId}/create-folder`, {
+            method: 'POST'
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Папка создана успешно!');
+                location.reload();
+            } else {
+                return response.text().then(text => {
+                    throw new Error(text || 'Ошибка при создании папки');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка создания папки:', error);
+            alert('Ошибка: ' + error.message);
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+
+function deleteClient() {
+    console.log('Вызвана функция deleteClient');
+    const modalElement = document.getElementById('deleteModal');
+    
+    if (modalElement && typeof bootstrap !== 'undefined') {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    } else {
+        if (confirm('Вы уверены, что хотите удалить этого клиента? Это действие нельзя отменить!')) {
+            const clientId = {{ client.id }};
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/client/${clientId}/delete`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+}
+
+function updateFolderInfo() {
+    console.log('Вызвана функция updateFolderInfo');
+    const clientId = {{ client.id }};
+    const pathField = document.getElementById('path_folder');
+    const statusElement = document.getElementById('folder-status');
+    const moveCheckbox = document.getElementById('move_files_on_change');
+    
+    if (!pathField || !statusElement) {
+        console.log('⚠️ Необходимые элементы не найдены');
+        return;
+    }
+    
+    const currentPath = pathField.value.trim();
+    
+    if (!currentPath) {
+        statusElement.innerHTML = '<i class="fas fa-info-circle text-muted"></i> Путь не указан';
+        statusElement.className = 'text-muted';
+        if (moveCheckbox) {
+            moveCheckbox.disabled = true;
+            moveCheckbox.checked = false;
+        }
+        return;
+    }
+    
+    // Показываем что проверяем
+    statusElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Проверяем путь...';
+    statusElement.className = 'text-muted';
+    
+    fetch(`/client/${clientId}/folder-info`)
+    .then(response => response.json())
+    .then(data => {
+        console.log('Получена информация о папке:', data);
+        
+        if (data.exists) {
+            statusElement.innerHTML = `<i class="fas fa-check-circle text-success"></i> Папка найдена (${data.files_count} файлов)`;
+            statusElement.className = 'text-success';
+            if (moveCheckbox) {
+                moveCheckbox.disabled = false;
+                moveCheckbox.title = 'Можно переместить существующие файлы';
+            }
+        } else {
+            statusElement.innerHTML = '<i class="fas fa-times-circle text-warning"></i> Папка не найдена - будет создана при сохранении';
+            statusElement.className = 'text-warning';
+            if (moveCheckbox) {
+                moveCheckbox.disabled = true;
+                moveCheckbox.checked = false;
+                moveCheckbox.title = 'Перемещение невозможно - папка не найдена';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при проверке папки:', error);
+        // Просто показываем что путь указан, но статус неизвестен
+        statusElement.innerHTML = '<i class="fas fa-question-circle text-info"></i> Статус папки неизвестен';
+        statusElement.className = 'text-info';
+    });
+}
+
+console.log('✅ edit_client.html JavaScript загружен');
+</script>
+{% endblock %}

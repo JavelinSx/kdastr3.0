@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки системы{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-cogs"></i> Настройки системы</h4>
+                <p class="text-muted mb-0">Конфигурация путей и параметров приложения</p>
+            </div>
+            <div class="card-body">
+                <!-- Статус текущих настроек -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Текущее состояние</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>База данных:</strong> 
+                            {% if path_status.database_path.exists %}
+                                <span class="badge bg-success">Найдена</span>
+                            {% else %}
+                                <span class="badge bg-danger">Не найдена</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Рабочая папка:</strong>
+                            {% if path_status.work_folder.exists %}
+                                <span class="badge bg-success">Существует</span>
+                            {% else %}
+                                <span class="badge bg-warning">Не найдена</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" id="settings-form">
+                    <!-- База данных -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-database"></i> База данных</h5>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <label for="database_path" class="form-label">
+                                    Путь к файлу базы данных <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="database_path" name="database_path" 
+                                       value="{{ settings.database_path }}" required
+                                       placeholder="database/kadastr.db">
+                                <div class="form-text">
+                                    <span id="db-status">
+                                        {% if path_status.database_path.exists %}
+                                            <i class="fas fa-check-circle text-success"></i> 
+                                            Файл найден: {{ path_status.database_path.abs_path }}
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i> 
+                                            Файл не найден: {{ path_status.database_path.abs_path }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-outline-info d-block" onclick="testDatabase()">
+                                    <i class="fas fa-flask"></i> Тест
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Рабочие папки -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-folder"></i> Рабочие папки</h5>
+                        
+                        <!-- Рабочая папка -->
+                        <div class="row mb-3">
+                            <div class="col-md-10">
+                                <label for="work_folder" class="form-label">
+                                    Рабочая папка <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="work_folder" name="work_folder" 
+                                       value="{{ settings.work_folder }}" required
+                                       placeholder="./work_files">
+                                <div class="form-text">
+                                    <span id="work-status">
+                                        {% if path_status.work_folder.exists %}
+                                            <i class="fas fa-check-circle text-success"></i> 
+                                            Папка существует: {{ path_status.work_folder.abs_path }}
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-warning"></i> 
+                                            Папка будет создана: {{ path_status.work_folder.abs_path }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-outline-success d-block" onclick="createFolder('work_folder')">
+                                    <i class="fas fa-plus"></i> Создать
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Папка шаблонов -->
+                        <div class="row mb-3">
+                            <div class="col-md-10">
+                                <label for="docs_folder" class="form-label">Папка шаблонов документов</label>
+                                <input type="text" class="form-control" id="docs_folder" name="docs_folder" 
+                                       value="{{ settings.docs_folder }}"
+                                       placeholder="./docs">
+                                <div class="form-text">
+                                    <span id="docs-status">
+                                        {% if path_status.docs_folder.exists %}
+                                            <i class="fas fa-check-circle text-success"></i> 
+                                            Папка существует: {{ path_status.docs_folder.abs_path }}
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-warning"></i> 
+                                            Папка будет создана: {{ path_status.docs_folder.abs_path }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-outline-success d-block" onclick="createFolder('docs_folder')">
+                                    <i class="fas fa-plus"></i> Создать
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Папка загрузок -->
+                        <div class="row mb-3">
+                            <div class="col-md-10">
+                                <label for="upload_folder" class="form-label">Папка загрузок</label>
+                                <input type="text" class="form-control" id="upload_folder" name="upload_folder" 
+                                       value="{{ settings.upload_folder }}"
+                                       placeholder="./uploads">
+                                <div class="form-text">
+                                    <span id="upload-status">
+                                        {% if path_status.upload_folder.exists %}
+                                            <i class="fas fa-check-circle text-success"></i> 
+                                            Папка существует: {{ path_status.upload_folder.abs_path }}
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-warning"></i> 
+                                            Папка будет создана: {{ path_status.upload_folder.abs_path }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-outline-success d-block" onclick="createFolder('upload_folder')">
+                                    <i class="fas fa-plus"></i> Создать
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Дополнительные действия -->
+                    <div class="mb-4">
+                        <h5 class="text-primary"><i class="fas fa-tools"></i> Дополнительные действия</h5>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-outline-warning me-2" onclick="createAllFolders()">
+                                    <i class="fas fa-folder-plus"></i> Создать все папки
+                                </button>
+                                <button type="button" class="btn btn-outline-info me-2" onclick="refreshStatus()">
+                                    <i class="fas fa-sync"></i> Обновить статус
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetToDefaults()">
+                                    <i class="fas fa-undo"></i> Сбросить к умолчаниям
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Предупреждение -->
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Внимание!</h6>
+                        <ul class="mb-0">
+                            <li>После изменения настроек необходимо перезапустить приложение</li>
+                            <li>Изменение пути к базе данных может потребовать миграции данных</li>
+                            <li>Убедитесь, что у приложения есть права на запись в указанные папки</li>
+                            <li>Рекомендуется делать резервные копии базы данных перед изменениями</li>
+                        </ul>
+                    </div>
+
+                    <!-- Кнопки сохранения -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить настройки
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Дополнительная информация -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-question-circle"></i> Справка по настройкам</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>База данных:</h6>
+                        <ul class="small">
+                            <li>Относительный путь: <code>database/kadastr.db</code></li>
+                            <li>Абсолютный путь: <code>C:\full\path\to\database.db</code></li>
+                            <li>Файл будет создан автоматически если не существует</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Папки:</h6>
+                        <ul class="small">
+                            <li><strong>Рабочая папка:</strong> Для хранения файлов клиентов</li>
+                            <li><strong>Папка шаблонов:</strong> Для шаблонов документов</li>
+                            <li><strong>Папка загрузок:</strong> Для временных файлов</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Загружена страница настроек');
+});
+
+function testDatabase() {
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Тест...';
+    button.disabled = true;
+    
+    fetch('/settings/test-database')
+    .then(response => response.json())
+    .then(data => {
+        const statusElement = document.getElementById('db-status');
+        if (data.success) {
+            statusElement.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${data.message}`;
+            alert(`Подключение успешно!\n${data.message}`);
+        } else {
+            statusElement.innerHTML = `<i class="fas fa-times-circle text-danger"></i> Ошибка: ${data.message}`;
+            alert(`Ошибка подключения:\n${data.message}`);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка тестирования: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function createFolder(inputId) {
+    const input = document.getElementById(inputId);
+    const folderPath = input.value.trim();
+    
+    if (!folderPath) {
+        alert('Введите путь к папке');
+        return;
+    }
+    
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    fetch('/settings/create-folders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            folders: [folderPath]
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Папка создана: ${data.created_folders.join(', ')}`);
+            refreshStatus();
+        } else {
+            alert(`Ошибка создания папки:\n${data.errors.join('\n')}`);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function createAllFolders() {
+    const folders = [
+        document.getElementById('work_folder').value.trim(),
+        document.getElementById('docs_folder').value.trim(),
+        document.getElementById('upload_folder').value.trim()
+    ].filter(path => path);
+    
+    if (folders.length === 0) {
+        alert('Заполните пути к папкам');
+        return;
+    }
+    
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Создаем...';
+    button.disabled = true;
+    
+    fetch('/settings/create-folders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            folders: folders
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        let message = '';
+        if (data.created_folders.length > 0) {
+            message += `Созданы папки:\n${data.created_folders.join('\n')}`;
+        }
+        if (data.errors.length > 0) {
+            message += `\n\nОшибки:\n${data.errors.join('\n')}`;
+        }
+        alert(message || 'Ничего не создано');
+        refreshStatus();
+    })
+    .catch(error => {
+        alert('Ошибка: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function refreshStatus() {
+    // Перезагружаем страницу для обновления статуса
+    window.location.reload();
+}
+
+function resetToDefaults() {
+    if (confirm('Сбросить все настройки к значениям по умолчанию?')) {
+        document.getElementById('database_path').value = 'database/kadastr.db';
+        document.getElementById('work_folder').value = './work_files';
+        document.getElementById('docs_folder').value = './docs';
+        document.getElementById('upload_folder').value = './uploads';
+    }
+}
+
+// Валидация формы
+document.getElementById('settings-form').addEventListener('submit', function(e) {
+    const databasePath = document.getElementById('database_path').value.trim();
+    const workFolder = document.getElementById('work_folder').value.trim();
+    
+    if (!databasePath) {
+        e.preventDefault();
+        alert('Путь к базе данных обязателен');
+        return;
+    }
+    
+    if (!workFolder) {
+        e.preventDefault();
+        alert('Рабочая папка обязательна');
+        return;
+    }
+    
+    if (!confirm('Сохранить настройки? Приложение потребует перезапуска.')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}
