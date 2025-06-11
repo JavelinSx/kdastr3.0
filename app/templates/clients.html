@@ -12,105 +12,78 @@
             <div class="card-body">
                 <!-- Поиск и фильтры -->
                 <div class="row mb-3">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" id="global-search" placeholder="Поиск по клиентам...">
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" id="status-filter">
-                            <option value="">Все статусы</option>
-                            <option value="Готова">Готова</option>
-                            <option value="Разработка">Разработка</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" id="work-filter">
-                            <option value="">Съёмка</option>
-                            <option value="Готова">Готова</option>
-                            <option value="Ожидает выезд">Ожидает</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-secondary" onclick="clearAllFilters()">
-                            <i class="fas fa-times"></i> Очистить
-                        </button>
-                        <a href="{{ url_for('main.add_client') }}" class="btn btn-primary ms-2">
-                            <i class="fas fa-plus"></i> Добавить клиента
-                        </a>
-                    </div>
-                </div>
+    <div class="col-md-6">
+        <input type="text" class="form-control" id="global-search" placeholder="Поиск по клиентам (ФИО, телефон, адрес)...">
+    </div>
+    <div class="col-md-6">
+        <button class="btn btn-outline-secondary" onclick="clearAllFilters()">
+            <i class="fas fa-times"></i> Очистить поиск
+        </button>
+        <a href="{{ url_for('main.add_client') }}" class="btn btn-primary ms-2">
+            <i class="fas fa-plus"></i> Добавить клиента
+        </a>
+    </div>
+</div>
 
                 <!-- Таблица клиентов -->
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="clients-table">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Разработка</th>
-                                <th>Съёмка</th>
-                                <th>Нас.пункт</th>
-                                <th>Адрес</th>
-                                <th>Фамилия</th>
-                                <th>Имя</th>
-                                <th>Телефон</th>
-                                <th>Услуга</th>
-                                <th>Дата записи</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for client in clients %}
-                            <tr>
-                                <td>
-                                    {% if client.work_info %}
-                                        {% if client.work_info.status == 1 %}
-                                            <span class="badge bg-success">Готова</span>
-                                        {% else %}
-                                            <span class="badge bg-warning">Разработка</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="badge bg-secondary">Не указан</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if client.work_info %}
-                                        {% if client.work_info.work == 1 %}
-                                            <span class="badge bg-success">Готова</span>
-                                        {% else %}
-                                            <span class="badge bg-info">Ожидает выезд</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="badge bg-secondary">Не указан</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ client.address.city_info.city_name if client.address and client.address.city_info else 'Не указан' }}</td>
-                                <td>{{ client.address.address if client.address else 'Не указан' }}</td>
-                                <td>{{ client.sur_name }}</td>
-                                <td>{{ client.name }}</td>
-                                <td>{{ client.telefone or '' }}</td>
-                                <td>{{ client.service_name }}</td>
-                                <td>{{ client.created_at.strftime('%d.%m.%Y') if client.created_at else '' }}</td>
-                                <td>
-                                    <div class="" role="group">
-                                        <button type="button" class="btn btn-sm btn-outline-success" 
-                                                onclick="openFolder({{ client.id }})" 
-                                                title="Открыть папку">
-                                            <i class="fas fa-folder-open"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                onclick="editClient({{ client.id }})" 
-                                                title="Редактировать">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteClient({{ client.id }})" 
-                                                title="Удалить">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<!-- Замените заголовок таблицы в clients.html на этот: -->
+
+<table class="table table-striped table-hover" id="clients-table">
+        <thead class="table-dark">
+            <tr>
+                <!-- УБРАНЫ колонки: Разработка и Съёмка -->
+                <th>Нас.пункт</th>
+                <th>Адрес</th>
+                <th>Фамилия</th>
+                <th>Имя</th>
+                <th>Телефон</th>
+                <th>Услуга</th>
+                <th>
+                    <i class="fas fa-calendar-plus text-warning" title="По этой дате сортируется таблица"></i>
+                    Дата создания заявки
+                </th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <!-- УБРАНЫ колонки статусов -->
+                <td>{{ client.address.city_info.city_name if client.address and client.address.city_info else 'Не указан' }}</td>
+                <td>{{ client.address.address if client.address else 'Не указан' }}</td>
+                <td>{{ client.sur_name }}</td>
+                <td>{{ client.name }}</td>
+                <td>{{ client.telefone or '' }}</td>
+                <td>{{ client.service_name }}</td>
+                <td>
+                    <span class="text-primary fw-bold" title="Дата создания заявки (перенесена из date_status)">
+                        {{ client.created_at.strftime('%d.%m.%Y') if client.created_at else 'Не указана' }}
+                    </span>
+                </td>
+                <td>
+                    <div class="" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                onclick="openFolder({{ client.id }})" 
+                                title="Открыть папку">
+                            <i class="fas fa-folder-open"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                onclick="editClient({{ client.id }})" 
+                                title="Редактировать">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                onclick="deleteClient({{ client.id }})" 
+                                title="Удалить">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
                 </div>
             </div>
         </div>
@@ -163,7 +136,39 @@ function addBadgeTooltips() {
     });
 }
 
-// ЕДИНСТВЕННАЯ функция инициализации DataTable с русской локализацией
+// Плагин для правильной сортировки европейских дат (ДД.ММ.ГГГГ)
+jQuery.extend(jQuery.fn.dataTableExt.oSort, {
+    "date-eu-pre": function (date) {
+        if (!date || date === '' || date === 'Не указана') {
+            return 0;
+        }
+        
+        // Парсим дату в формате ДД.ММ.ГГГГ
+        var parts = date.split('.');
+        if (parts.length !== 3) {
+            return 0;
+        }
+        
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10) - 1; // Месяцы в JavaScript начинаются с 0
+        var year = parseInt(parts[2], 10);
+        
+        // Создаем объект Date и возвращаем timestamp для сортировки
+        var dateObj = new Date(year, month, day);
+        return dateObj.getTime();
+    },
+
+    "date-eu-asc": function (a, b) {
+        return a - b;
+    },
+
+    "date-eu-desc": function (a, b) {
+        return b - a;
+    }
+});
+
+window.clientsTableInitialized = false;
+
 function initializeClientTable() {
     if (typeof $ === 'undefined') {
         console.log('jQuery еще не загружен, ждем...');
@@ -171,100 +176,161 @@ function initializeClientTable() {
         return;
     }
     
-    console.log('jQuery найден, инициализируем таблицу');
+    console.log('jQuery найден, проверяем состояние таблицы...');
     
     try {
-        if ($('#clients-table').length > 0) {
-            window.clientsTable = $('#clients-table').DataTable({
-                // Русская локализация
-                "language": {
-                    "processing": "Подождите...",
-                    "search": "Поиск:",
-                    "lengthMenu": "Показать _MENU_ записей",
-                    "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
-                    "infoEmpty": "Записи с 0 до 0 из 0 записей",
-                    "infoFiltered": "(отфильтровано из _MAX_ записей)",
-                    "infoPostFix": "",
-                    "loadingRecords": "Загрузка записей...",
-                    "zeroRecords": "Записи отсутствуют.",
-                    "emptyTable": "В таблице отсутствуют данные",
-                    "paginate": {
-                        "first": "Первая",
-                        "previous": "Предыдущая",
-                        "next": "Следующая",
-                        "last": "Последняя"
-                    },
-                    "aria": {
-                        "sortAscending": ": активировать для сортировки столбца по возрастанию",
-                        "sortDescending": ": активировать для сортировки столбца по убыванию"
-                    }
-                },
-                
-                // Настройка расположения элементов
-                "dom": '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
-                       '<"row"<"col-sm-12"tr>>' +
-                       '<"row"<"col-sm-5"i><"col-sm-7"p>>',
-                
-                // Основные настройки
-                "pageLength": 25,
-                "order": [[8, "desc"]],
-                "columnDefs": [
-                    { "orderable": false, "targets": 9 }
-                ],
-                
-                // Варианты количества записей
-                "lengthMenu": [
-                    [10, 25, 50, 100, -1],
-                    ["10", "25", "50", "100", "Все"]
-                ],
-                
-                // Настройки отображения
-                "searching": true,
-                "lengthChange": true,
-                "paging": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-                
-                "drawCallback": function() {
-                    setTimeout(() => {
-                        addTableTooltips();
-                        addBadgeTooltips();
-                    }, 100);
-                }
-            });
-            
-            // Глобальный поиск
-            $('#global-search').on('keyup', function() {
-                window.clientsTable.search(this.value).draw();
-            });
-            
-            // Фильтр по статусу
-            $('#status-filter').on('change', function() {
-                window.clientsTable.column(0).search(this.value).draw();
-            });
-            
-            // Фильтр по работе
-            $('#work-filter').on('change', function() {
-                window.clientsTable.column(1).search(this.value).draw();
-            });
-            
-            // Добавляем tooltips при первой загрузке
-            setTimeout(() => {
-                addTableTooltips();
-                addBadgeTooltips();
-            }, 300);
-            
-            console.log('DataTable инициализирован с русской локализацией');
+        const tableElement = $('#clients-table');
+        
+        if (tableElement.length === 0) {
+            console.log('❌ Таблица #clients-table не найдена');
+            return;
         }
+        
+        // Проверяем, не инициализирована ли уже таблица
+        if (window.clientsTableInitialized || $.fn.DataTable.isDataTable('#clients-table')) {
+            console.log('⚠️ DataTable уже инициализирована, пропускаем...');
+            
+            if (window.clientsTable) {
+                // ИСПРАВЛЕНО: Дата теперь в колонке 6 (было 8)
+                window.clientsTable.order([[6, 'desc']]).draw(false);
+                console.log('🔄 Применена сортировка к существующей таблице');
+            }
+            return;
+        }
+        
+        console.log('🚀 Инициализируем новую DataTable без колонок статуса...');
+        
+        window.clientsTable = tableElement.DataTable({
+            // Русская локализация
+            "language": {
+                "processing": "Подождите...",
+                "search": "Поиск:",
+                "lengthMenu": "Показать _MENU_ записей",
+                "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
+                "infoEmpty": "Записи с 0 до 0 из 0 записей",
+                "infoFiltered": "(отфильтровано из _MAX_ записей)",
+                "infoPostFix": "",
+                "loadingRecords": "Загрузка записей...",
+                "zeroRecords": "Записи отсутствуют.",
+                "emptyTable": "В таблице отсутствуют данные",
+                "paginate": {
+                    "first": "Первая",
+                    "previous": "Предыдущая",
+                    "next": "Следующая",
+                    "last": "Последняя"
+                },
+                "aria": {
+                    "sortAscending": ": активировать для сортировки столбца по возрастанию",
+                    "sortDescending": ": активировать для сортировки столбца по убыванию"
+                }
+            },
+            
+            // Настройка расположения элементов
+            "dom": '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
+                   '<"row"<"col-sm-12"tr>>' +
+                   '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+            
+            // ИСПРАВЛЕНО: Настройки сортировки для новой структуры таблицы
+            "pageLength": 25,
+            "order": [[6, "desc"]], // Дата создания теперь в колонке 6 (было 8)
+            "columnDefs": [
+                { "orderable": false, "targets": 7 }, // Колонка действий теперь 7 (было 9)
+                { 
+                    "targets": 6, // Колонка с датой создания теперь 6 (было 8)
+                    "type": "date-eu" // Используем наш плагин для европейских дат
+                }
+            ],
+            
+            // Варианты количества записей
+            "lengthMenu": [
+                [10, 25, 50, 100, -1],
+                ["10", "25", "50", "100", "Все"]
+            ],
+            
+            // Настройки отображения
+            "searching": true,
+            "lengthChange": true,
+            "paging": true,
+            "info": true,
+            "autoWidth": false,
+            "responsive": true,
+            
+            "drawCallback": function() {
+                setTimeout(() => {
+                    addTableTooltips();
+                    addBadgeTooltips();
+                }, 100);
+            }
+        });
+        
+        // Отмечаем что таблица инициализирована
+        window.clientsTableInitialized = true;
+        
+        // Привязываем обработчики событий
+        setupTableEventHandlers();
+        
+        // Добавляем tooltips при первой загрузке
+        setTimeout(() => {
+            addTableTooltips();
+            addBadgeTooltips();
+        }, 300);
+        
+        console.log('✅ DataTable инициализирован без колонок статуса, сортировка по дате (колонка 6)');
+        
     } catch (error) {
-        console.error('Ошибка инициализации DataTable:', error);
+        console.error('❌ Ошибка инициализации DataTable:', error);
+        window.clientsTableInitialized = false;
     }
 }
 
-// Запускаем инициализацию
+// Отдельная функция для настройки обработчиков событий
+function setupTableEventHandlers() {
+    if (!window.clientsTable) {
+        console.log('⚠️ Таблица не инициализирована, пропускаем обработчики');
+        return;
+    }
+    
+    // Только глобальный поиск (убраны фильтры по статусу и работе)
+    $('#global-search').off('keyup').on('keyup', function() {
+        window.clientsTable.search(this.value).draw();
+    });
+    
+    console.log('✅ Обработчики событий настроены (только поиск)');
+}
+
+// Функция для принудительной пересортировки таблицы
+function forceDateSort() {
+    if (window.clientsTable && window.clientsTableInitialized) {
+        console.log('🔄 Принудительная пересортировка по дате');
+        window.clientsTable.order([[8, 'desc']]).draw(false);
+    }
+}
+
+// Функция для безопасного уничтожения и пересоздания таблицы
+function reinitializeTable() {
+    console.log('🔄 Переинициализация таблицы...');
+    
+    if (window.clientsTable && $.fn.DataTable.isDataTable('#clients-table')) {
+        window.clientsTable.destroy();
+        console.log('🗑️ Старая таблица уничтожена');
+    }
+    
+    window.clientsTableInitialized = false;
+    window.clientsTable = null;
+    
+    setTimeout(initializeClientTable, 100);
+}
+
+// Основная инициализация
 document.addEventListener('DOMContentLoaded', function() {
-    initializeClientTable();
+    console.log('DOM загружен, запускаем инициализацию таблицы...');
+    
+    // Проверяем, не вызывалась ли уже инициализация
+    if (!window.clientsTableInitialized) {
+        setTimeout(initializeClientTable, 200);
+    } else {
+        console.log('ℹ️ Таблица уже инициализирована ранее');
+    }
 });
 
 // Простые функции без jQuery
@@ -332,15 +398,16 @@ function showProblematic() {
 }
 
 function clearAllFilters() {
-    const inputs = ['global-search', 'status-filter', 'work-filter'];
-    inputs.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) element.value = '';
-    });
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
     
     if (window.clientsTable) {
-        window.clientsTable.search('').columns().search('').draw();
+        window.clientsTable.search('').draw();
     }
+    
+    console.log('🧹 Поиск очищен');
 }
 
 // Дополнительная функция для ручного добавления tooltips к конкретным ячейкам

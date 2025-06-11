@@ -39,51 +39,64 @@ def simple_fuzzy_match(text1, text2, threshold=80):
 
 @bp.route('/')
 def index():
-    """Главная страница с таблицей клиентов"""
+    """Главная страница с таблицей клиентов - СОРТИРОВКА ПО ДАТЕ СОЗДАНИЯ"""
     try:
+        # ИСПРАВЛЕНО: Сортировка по created_at (дата создания заявки) в убывающем порядке
         clients = db.session.query(Client)\
             .join(AddressInfo, Client.id == AddressInfo.id_client, isouter=True)\
             .join(City, AddressInfo.id_city == City.id, isouter=True)\
             .join(WorkInfo, Client.id == WorkInfo.id_client, isouter=True)\
             .order_by(Client.created_at.desc())\
             .all()
-    except Exception:
-        # Если join не работает, используем простой запрос
+    except Exception as e:
+        print(f"Ошибка JOIN запроса: {e}")
+        # Если join не работает, используем простой запрос с сортировкой
         clients = Client.query.order_by(Client.created_at.desc()).all()
     
     return render_template('clients.html', clients=clients)
 
+# Исправления в routes.py - замените функцию api_clients на эту версию:
+
 @bp.route('/api/clients')
 def api_clients():
-    """API для получения данных клиентов (для DataTables)"""
-    # Получаем параметры фильтрации
-    status_filter = request.args.get('status')
-    work_filter = request.args.get('work')
-    date_filter = request.args.get('date')
+    """API для получения данных клиентов (для DataTables) - БЕЗ КОЛОНОК СТАТУСА"""
+    # Получаем только параметры поиска (убрали фильтры статуса)
     search_query = request.args.get('search', '').strip()
     
-    # Получаем всех клиентов
-    all_clients = Client.query.all()
+    # Получаем всех клиентов с сортировкой по дате создания (новые сверху)
+    try:
+        # Сначала пробуем сложный запрос с JOIN
+        clients_query = db.session.query(Client)\
+            .join(AddressInfo, Client.id == AddressInfo.id_client, isouter=True)\
+            .join(City, AddressInfo.id_city == City.id, isouter=True)\
+            .join(WorkInfo, Client.id == WorkInfo.id_client, isouter=True)\
+            .order_by(Client.created_at.desc().nulls_last())\
+            .all()
+    except Exception as e:
+        print(f"Ошибка сложного запроса: {e}")
+        # Если не работает, используем простой запрос
+        clients_query = Client.query.order_by(Client.created_at.desc()).all()
+    
+    # Дополнительная сортировка в Python для надежности
+    def get_client_date(client):
+        """Получить дату клиента для сортировки"""
+        if client.created_at:
+            return client.created_at
+        # Если нет created_at, ставим в конец (самая старая дата)
+        return datetime(1900, 1, 1)
+    
+    # Принудительно сортируем в Python (новые сверху)
+    all_clients = sorted(clients_query, key=get_client_date, reverse=True)
+    
+    print(f"📊 Всего клиентов после сортировки: {len(all_clients)}")
+    if all_clients:
+        print(f"🔝 Первый клиент: {all_clients[0].full_name} - {all_clients[0].created_at}")
+        print(f"🔚 Последний клиент: {all_clients[-1].full_name} - {all_clients[-1].created_at}")
+    
     filtered_clients = []
     
     for client in all_clients:
-        # Применяем фильтры
-        if status_filter:
-            if status_filter == 'ready' and (not client.work_info or client.work_info.status != 1):
-                continue
-            elif status_filter == 'development' and (not client.work_info or client.work_info.status != 0):
-                continue
-        
-        if work_filter:
-            if work_filter == 'ready' and (not client.work_info or client.work_info.work != 1):
-                continue
-            elif work_filter == 'waiting' and (not client.work_info or client.work_info.work != 0):
-                continue
-        
-        if date_filter and client.work_info and client.work_info.date_status != date_filter:
-            continue
-        
-        # Применяем поиск
+        # Применяем только поиск (убрали фильтры статусов)
         if search_query:
             search_text = search_query.lower()
             
@@ -117,13 +130,17 @@ def api_clients():
         
         filtered_clients.append(client)
     
-    # Формируем данные для ответа
+    # Формируем данные для ответа - УБРАЛИ ПОЛЯ СТАТУСОВ
     data = []
     for client in filtered_clients:
+        # Форматируем дату для правильной сортировки в DataTable
+        formatted_date = ''
+        if client.created_at:
+            formatted_date = client.created_at.strftime('%d.%m.%Y')
+        
         data.append({
             'id': client.id,
-            'status': client.work_info.status_name if client.work_info else 'Не указан',
-            'work': client.work_info.work_status_name if client.work_info else 'Не указан',
+            # УБРАЛИ: 'status' и 'work'
             'city': client.address.city_info.city_name if client.address and client.address.city_info else 'Не указан',
             'address': client.address.address if client.address else 'Не указан',
             'sur_name': client.sur_name,
@@ -131,9 +148,12 @@ def api_clients():
             'middle_name': client.middle_name or '',
             'telefone': client.telefone or '',
             'service': client.service_name,
-            'date_status': client.work_info.date_status if client.work_info else '',
-            'created_at': client.created_at.strftime('%d.%m.%Y') if client.created_at else ''
+            'created_at': formatted_date,
+            # Добавляем сортировочный ключ для надежности
+            'sort_timestamp': client.created_at.timestamp() if client.created_at else 0
         })
+    
+    print(f"📋 Отправляем {len(data)} клиентов без колонок статуса")
     
     return jsonify({'data': data})
 
