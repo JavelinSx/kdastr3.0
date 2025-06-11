@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Изменить путь к папке - {{ client.full_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-folder-open"></i> Изменение пути к папке клиента</h4>
+                <h6 class="text-muted mb-0">{{ client.full_name }}</h6>
+            </div>
+            <div class="card-body">
+                <!-- Текущая информация -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Текущая информация</h6>
+                    <p><strong>Текущий путь:</strong> 
+                        {% if client.path_folder %}
+                            <code>{{ client.path_folder }}</code>
+                        {% else %}
+                            <span class="text-muted">Не указан</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0"><strong>Статус:</strong> 
+                        <span id="folder-status" class="text-warning">
+                            <i class="fas fa-spinner fa-spin"></i> Проверяем...
+                        </span>
+                    </p>
+                </div>
+
+                <form method="POST" id="change-path-form">
+                    <div class="mb-4">
+                        <label for="new_path" class="form-label">
+                            <i class="fas fa-folder"></i> Новый путь к папке <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="new_path" name="new_path" 
+                               value="{{ client.path_folder or '' }}" required 
+                               placeholder="C:\path\to\folder или /path/to/folder">
+                        <div class="form-text">
+                            Укажите полный путь к папке. Путь должен существовать.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="move_files" name="move_files">
+                            <label class="form-check-label" for="move_files">
+                                <i class="fas fa-arrows-alt"></i> Переместить существующие файлы в новое место
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            <strong>Важно:</strong> Эта опция работает только если старая папка существует. 
+                            Если старая папка не найдена, будет изменен только путь в базе данных.
+                        </div>
+                    </div>
+
+                    <!-- Предупреждения -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Как это работает:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Если старая папка найдена и отмечено "Переместить файлы":</strong> Папка будет перемещена в новое место</li>
+                            <li><strong>Если старая папка не найдена:</strong> В базе данных будет сохранен новый путь (перемещение невозможно)</li>
+                            <li><strong>Если не отмечено "Переместить файлы":</strong> Изменится только путь в базе данных</li>
+                            <li><strong>Новый путь должен существовать</strong> и быть доступным для записи</li>
+                        </ul>
+                    </div>
+
+                    <!-- Кнопки управления -->
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-secondary" onclick="selectFolder()">
+                            <i class="fas fa-search"></i> Выбрать папку
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="checkPath()">
+                            <i class="fas fa-check-circle"></i> Проверить путь
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="createFolder()">
+                            <i class="fas fa-plus"></i> Создать папку
+                        </button>
+                    </div>
+
+                    <!-- Кнопки действий -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.edit_client', client_id=client.id) }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Карточка с подсказками -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-lightbulb"></i> Полезные советы</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Windows:</h6>
+                        <ul class="small">
+                            <li><code>C:\Users\Name\Documents\Work</code></li>
+                            <li><code>D:\Projects\Clients</code></li>
+                            <li>Используйте обратные слэши <code>\</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Linux/Mac:</h6>
+                        <ul class="small">
+                            <li><code>/home/user/documents/work</code></li>
+                            <li><code>/Users/name/Projects/Clients</code></li>
+                            <li>Используйте прямые слэши <code>/</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Загружена страница изменения пути');
+    
+    // Проверяем текущий статус папки
+    checkCurrentFolderStatus();
+    
+    // Автоматическая проверка пути при вводе
+    const pathInput = document.getElementById('new_path');
+    if (pathInput) {
+        let timeoutId;
+        pathInput.addEventListener('input', function() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(checkPath, 1000); // Проверяем через 1 секунду после остановки ввода
+        });
+    }
+});
+
+function checkCurrentFolderStatus() {
+    const clientId = {{ client.id }};
+    fetch(`/client/${clientId}/folder-info`)
+    .then(response => response.json())
+    .then(data => {
+        const statusElement = document.getElementById('folder-status');
+        const moveCheckbox = document.getElementById('move_files');
+        
+        if (statusElement) {
+            if (data.exists) {
+                statusElement.innerHTML = '<i class="fas fa-check-circle text-success"></i> Папка найдена (' + data.files_count + ' файлов)';
+                statusElement.className = 'text-success';
+                // Разрешаем перемещение файлов
+                if (moveCheckbox) {
+                    moveCheckbox.disabled = false;
+                    moveCheckbox.parentElement.title = 'Можно переместить существующие файлы';
+                }
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-times-circle text-danger"></i> Папка не найдена';
+                statusElement.className = 'text-danger';
+                // Показываем что перемещение файлов невозможно, но можно изменить путь
+                if (moveCheckbox) {
+                    moveCheckbox.checked = false;
+                    moveCheckbox.disabled = true;
+                    moveCheckbox.parentElement.title = 'Перемещение невозможно - старая папка не найдена';
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка проверки папки:', error);
+        const statusElement = document.getElementById('folder-status');
+        if (statusElement) {
+            statusElement.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Ошибка проверки';
+            statusElement.className = 'text-warning';
+        }
+    });
+}
+
+function selectFolder() {
+    alert('Функция выбора папки доступна только в десктопных приложениях.\nВведите путь вручную.');
+}
+
+function checkPath() {
+    const pathInput = document.getElementById('new_path');
+    if (!pathInput || !pathInput.value.trim()) {
+        alert('Введите путь для проверки');
+        return;
+    }
+    
+    const path = pathInput.value.trim();
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Проверяем...';
+    button.disabled = true;
+    
+    // Простая проверка формата пути
+    let isValidFormat = false;
+    if (path.match(/^[A-Za-z]:\\/) || path.match(/^\/[^\/]/)) {
+        isValidFormat = true;
+    }
+    
+    setTimeout(() => {
+        if (isValidFormat) {
+            // Визуальная обратная связь
+            pathInput.classList.remove('is-invalid');
+            pathInput.classList.add('is-valid');
+            alert(`Путь "${path}" имеет правильный формат.\nПроверьте, что папка существует перед сохранением.`);
+        } else {
+            pathInput.classList.remove('is-valid');
+            pathInput.classList.add('is-invalid');
+            alert('Неправильный формат пути!\nПример для Windows: C:\\path\\to\\folder\nПример для Linux/Mac: /path/to/folder');
+        }
+        
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }, 500);
+}
+
+function createFolder() {
+    const pathInput = document.getElementById('new_path');
+    if (!pathInput || !pathInput.value.trim()) {
+        alert('Введите путь для создания папки');
+        return;
+    }
+    
+    const path = pathInput.value.trim();
+    if (!confirm(`Создать папку по пути:\n${path}\n\nПродолжить?`)) {
+        return;
+    }
+    
+    alert('Функция создания папок через веб-интерфейс не реализована по соображениям безопасности.\nСоздайте папку вручную и затем укажите путь.');
+}
+
+// Валидация формы
+document.getElementById('change-path-form').addEventListener('submit', function(e) {
+    const pathInput = document.getElementById('new_path');
+    const path = pathInput.value.trim();
+    
+    if (!path) {
+        e.preventDefault();
+        alert('Введите путь к папке');
+        pathInput.focus();
+        return;
+    }
+    
+    // Проверка формата пути
+    const isWindows = path.match(/^[A-Za-z]:\\/);
+    const isUnix = path.match(/^\/[^\/]/);
+    
+    if (!isWindows && !isUnix) {
+        e.preventDefault();
+        alert('Неправильный формат пути!\nИспользуйте полный путь, например:\nWindows: C:\\path\\to\\folder\nLinux/Mac: /path/to/folder');
+        pathInput.focus();
+        return;
+    }
+    
+    const moveFiles = document.getElementById('move_files').checked;
+    const confirmMessage = moveFiles 
+        ? `Изменить путь на:\n${path}\n\nС перемещением файлов?\n\nВНИМАНИЕ: Убедитесь что папка существует!`
+        : `Изменить путь на:\n${path}\n\nБез перемещения файлов (только в базе данных)?`;
+    
+    if (!confirm(confirmMessage)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

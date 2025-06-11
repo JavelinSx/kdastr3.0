@@ -1,0 +1,14 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-Migrate==4.0.5
+Flask-WTF==1.1.1
+WTForms==3.0.1
+SQLAlchemy==2.0.21
+Werkzeug==2.3.7
+Jinja2==3.1.2
+click==8.1.7
+python-docx==0.8.11
+docxtpl==0.16.7
+openpyxl==3.1.2
+rapidfuzz>=3.9.0,<4.0.0
+python-dotenv==1.0.0

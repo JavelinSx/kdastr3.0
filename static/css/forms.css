@@ -1,0 +1,540 @@
+/* Стили для форм */
+
+/* Общие стили форм */
+.form-container {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section-title {
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-section-title i {
+  font-size: 1.1em;
+}
+
+/* Поля формы */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+  display: block;
+  font-size: 0.875rem;
+}
+
+.form-label .text-danger {
+  color: var(--danger-color) !important;
+  font-weight: 600;
+}
+
+.form-control,
+.form-select {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius);
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: var(--transition);
+  background-color: white;
+  width: 100%;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  outline: 0;
+  background-color: white;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  background-color: var(--gray-100);
+  color: var(--gray-500);
+  border-color: var(--gray-300);
+  cursor: not-allowed;
+}
+
+.form-control::placeholder {
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+/* Размеры полей */
+.form-control-sm,
+.form-select-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.form-control-lg,
+.form-select-lg {
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+}
+
+/* Текстовые области */
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+}
+
+textarea.form-control-lg {
+  min-height: 120px;
+}
+
+/* Валидация */
+.form-control.is-valid,
+.form-select.is-valid {
+  border-color: var(--success-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 2.94 2.94-4.88-4.88.94-.94L2.3 6.73z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-control.is-valid:focus,
+.form-select.is-valid:focus {
+  border-color: var(--success-color);
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--danger-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4M7.2 5.4 5.8 7.2'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: var(--danger-color);
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.valid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--success-color);
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--danger-color);
+}
+
+/* Группы полей */
+.input-group {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+.input-group .form-control,
+.input-group .form-select {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+}
+
+.input-group .form-control:not(:last-child),
+.input-group .form-select:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 0;
+}
+
+.input-group .form-control:not(:first-child),
+.input-group .form-select:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.input-group-text {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--gray-700);
+  text-align: center;
+  white-space: nowrap;
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-300);
+}
+
+.input-group .btn {
+  position: relative;
+  z-index: 2;
+  border-radius: 0;
+}
+
+.input-group .btn:not(:last-child) {
+  border-right: 0;
+}
+
+.input-group .btn:first-child {
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+}
+
+.input-group .btn:last-child {
+  border-top-right-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}
+
+/* Чекбоксы и радиокнопки */
+.form-check {
+  display: block;
+  min-height: 1.5rem;
+  padding-left: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.125rem;
+  margin-left: -1.75rem;
+  vertical-align: top;
+  background-color: white;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  border: 1px solid var(--gray-400);
+  appearance: none;
+  color-adjust: exact;
+  transition: var(--transition);
+}
+
+.form-check-input[type="checkbox"] {
+  border-radius: var(--border-radius);
+}
+
+.form-check-input[type="radio"] {
+  border-radius: 50%;
+}
+
+.form-check-input:active {
+  filter: brightness(90%);
+}
+
+.form-check-input:focus {
+  border-color: var(--primary-color);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.form-check-input:checked[type="checkbox"] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+
+.form-check-input:checked[type="radio"] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.form-check-input:indeterminate {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+}
+
+.form-check-input:disabled {
+  pointer-events: none;
+  filter: none;
+  opacity: 0.5;
+}
+
+.form-check-input:disabled ~ .form-check-label {
+  opacity: 0.5;
+}
+
+.form-check-label {
+  color: var(--gray-700);
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+/* Inline чекбоксы */
+.form-check-inline {
+  display: inline-block;
+  margin-right: 1rem;
+  margin-bottom: 0;
+}
+
+/* Переключатели (switches) */
+.form-switch {
+  padding-left: 2.5rem;
+}
+
+.form-switch .form-check-input {
+  width: 2rem;
+  margin-left: -2.5rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+  background-position: left center;
+  border-radius: 2rem;
+  transition: background-position 0.15s ease-in-out;
+}
+
+.form-switch .form-check-input:focus {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:checked {
+  background-position: right center;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+/* Диапазон (range) */
+.form-range {
+  width: 100%;
+  height: 1.5rem;
+  padding: 0;
+  background-color: transparent;
+  appearance: none;
+}
+
+.form-range:focus {
+  outline: 0;
+}
+
+.form-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1px var(--gray-50), 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-range::-webkit-slider-track {
+  width: 100%;
+  height: 0.5rem;
+  color: transparent;
+  cursor: pointer;
+  background-color: var(--gray-200);
+  border-color: transparent;
+  border-radius: 1rem;
+}
+
+.form-range::-webkit-slider-thumb {
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.25rem;
+  background-color: var(--primary-color);
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 0.1rem 0.25rem rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+  appearance: none;
+}
+
+.form-range::-webkit-slider-thumb:active {
+  background-color: var(--primary-dark);
+}
+
+/* Floating labels */
+.form-floating {
+  position: relative;
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+  height: calc(3.5rem + 2px);
+  line-height: 1.25;
+  padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 1rem 0.75rem;
+  overflow: hidden;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid transparent;
+  transform-origin: 0 0;
+  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+  opacity: 0.65;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  color: var(--primary-color);
+}
+
+/* Помощь и подсказки */
+.form-text {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  line-height: 1.4;
+}
+
+.form-text i {
+  margin-right: 0.25rem;
+  color: var(--info-color);
+}
+
+/* Обязательные поля */
+.required-field .form-label::after {
+  content: " *";
+  color: var(--danger-color);
+  font-weight: bold;
+}
+
+/* Группы документов */
+.document-group {
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.document-group h6 {
+  color: var(--gray-700);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.document-group .form-check {
+  margin-bottom: 0.5rem;
+}
+
+.document-group .form-check:last-child {
+  margin-bottom: 0;
+}
+
+/* Кнопки действий с документами */
+.document-actions {
+  background-color: var(--gray-50);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.document-actions .btn {
+  margin: 0.25rem;
+}
+
+/* Информация о папке */
+.folder-info {
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.folder-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Адаптивность форм */
+@media (max-width: 767.98px) {
+  .form-section-title {
+    font-size: 1rem;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: 0.9rem;
+  }
+
+  .form-floating > .form-control,
+  .form-floating > .form-select {
+    height: calc(3rem + 2px);
+  }
+
+  .document-group {
+    padding: 0.75rem;
+  }
+
+  .form-check-inline {
+    display: block;
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .form-check {
+    padding-left: 1.5rem;
+  }
+
+  .form-check-input {
+    width: 1rem;
+    height: 1rem;
+    margin-left: -1.5rem;
+  }
+
+  .input-group {
+    flex-direction: column;
+  }
+
+  .input-group .form-control,
+  .input-group .form-select,
+  .input-group .btn {
+    border-radius: var(--border-radius) !important;
+    border: 1px solid var(--gray-300) !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-group .form-control:last-child,
+  .input-group .form-select:last-child,
+  .input-group .btn:last-child {
+    margin-bottom: 0;
+  }
+}
