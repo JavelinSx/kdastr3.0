@@ -11,8 +11,8 @@
                 <p class="text-muted mb-0">Конфигурация путей и параметров приложения</p>
             </div>
             <div class="card-body">
-                <!-- Статус текущих настроек -->
-                <div class="alert alert-info">
+                <!-- Текущее состояние -->
+                <div class="mb-4 p-3 border rounded" style="background-color: #e8f4fd;">
                     <h6><i class="fas fa-info-circle"></i> Текущее состояние</h6>
                     <div class="row">
                         <div class="col-md-6">
@@ -33,6 +33,70 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Сетевые настройки -->
+                {% if network_info %}
+                <div class="mb-4 p-3 border rounded" style="background-color: #f0f8ff;">
+                    <h6><i class="fas fa-network-wired"></i> Сетевые настройки и доступ</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Локальный доступ:</strong><br>
+                            <a href="http://{{ network_info.localhost }}:{{ network_info.port }}" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt"></i> http://{{ network_info.localhost }}:{{ network_info.port }}
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Статус сетевого доступа:</strong>
+                            {% if network_info.is_accessible_from_network %}
+                                <span class="badge bg-success">Доступно в сети</span>
+                            {% else %}
+                                <span class="badge bg-warning">Только локально</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if network_info.network_addresses %}
+                    <hr class="my-2">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <strong>Доступ из локальной сети:</strong><br>
+                            {% for addr in network_info.network_addresses %}
+                                <div class="mt-1">
+                                    <small class="text-muted">{{ addr.interface }}:</small>
+                                    {% if network_info.is_accessible_from_network %}
+                                        <a href="{{ addr.url }}" target="_blank" class="text-decoration-none ms-2">
+                                            <i class="fas fa-external-link-alt"></i> {{ addr.url }}
+                                        </a>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm ms-2" 
+                                                onclick="copyToClipboard('{{ addr.url }}')" title="Скопировать ссылку">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted ms-2">{{ addr.url }} (недоступно)</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not network_info.is_accessible_from_network %}
+                    <hr class="my-2">
+                    <div class="p-2 border rounded" style="background-color: #fff3cd; border-color: #ffeaa7;">
+                        <small>
+                            <i class="fas fa-info-circle"></i> 
+                            Для доступа из сети измените настройку FLASK_HOST с 127.0.0.1 на 0.0.0.0 в файле .env
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="mb-4 p-3 border rounded" style="background-color: #f8d7da; border-color: #f5c6cb;">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Сетевые настройки</h6>
+                    <p class="mb-0">Ошибка получения сетевой информации. Проверьте установку пакета psutil.</p>
+                </div>
+                {% endif %}
 
                 <form method="POST" id="settings-form">
                     <!-- База данных -->
@@ -157,7 +221,7 @@
                     </div>
 
                     <!-- Предупреждение -->
-                    <div class="alert alert-warning">
+                    <div class="p-3 border rounded mb-4" style="background-color: #fff3cd; border-color: #ffeaa7;">
                         <h6><i class="fas fa-exclamation-triangle"></i> Внимание!</h6>
                         <ul class="mb-0">
                             <li>После изменения настроек необходимо перезапустить приложение</li>
@@ -211,6 +275,7 @@
 
 {% block extra_js %}
 <script>
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Загружена страница настроек');
     
@@ -232,6 +297,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Функция для копирования ссылки в буфер обмена
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification(`Ссылка скопирована: ${text}`, 'success');
+        }).catch(err => {
+            console.error('Ошибка копирования:', err);
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+// Fallback функция копирования для старых браузеров
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showNotification(`Ссылка скопирована: ${text}`, 'success');
+        } else {
+            showNotification('Не удалось скопировать ссылку', 'error');
+        }
+    } catch (err) {
+        console.error('Fallback: Ошибка копирования', err);
+        showNotification('Ошибка копирования ссылки', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
 
 // Функция для проверки конкретного пути
 function checkPath(inputId) {
@@ -317,11 +423,9 @@ function manualPath(inputId) {
 
 // Функция для показа уведомлений
 function showNotification(message, type = 'info') {
-    // Удаляем старые уведомления
     const oldNotifications = document.querySelectorAll('.temp-notification');
     oldNotifications.forEach(notification => notification.remove());
     
-    // Создаем новое уведомление
     const notification = document.createElement('div');
     notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed temp-notification`;
     notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
@@ -331,10 +435,8 @@ function showNotification(message, type = 'info') {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
-    // Добавляем в body
     document.body.appendChild(notification);
     
-    // Автоматически удаляем через 4 секунды
     setTimeout(() => {
         if (notification.parentNode) {
             notification.remove();
@@ -418,19 +520,15 @@ function createAllFolders() {
 }
 
 function refreshStatus() {
-    // Сохраняем текущие значения полей
     const currentValues = {
         work_folder: document.getElementById('work_folder').value,
         docs_folder: document.getElementById('docs_folder').value,
         database_path: document.getElementById('database_path').value
     };
     
-    // Показываем уведомление о сохранении значений
     showNotification('Обновляется статус папок, значения сохранены...', 'info');
     
-    // Небольшая задержка перед перезагрузкой
     setTimeout(() => {
-        // Сохраняем значения в sessionStorage перед перезагрузкой
         sessionStorage.setItem('savedPaths', JSON.stringify(currentValues));
         window.location.reload();
     }, 1000);
