@@ -1,217 +1,255 @@
-{% extends "base.html" %}
-
-{% block title %}Добавить клиента{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Добавить клиента{% endblock %} {%
+block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4><i class="fas fa-user-plus"></i> Добавление нового клиента</h4>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h4><i class="fas fa-user-plus"></i> Добавление нового клиента</h4>
+      </div>
+      <div class="card-body">
+        <form method="POST" id="add-client-form">
+          <!-- Выбор услуги -->
+          <div class="mb-4">
+            <h5 class="text-primary">
+              <i class="fas fa-cog"></i> Выбор предоставляемой услуги
+            </h5>
+            <div class="row">
+              <div class="col-md-12">
+                <label for="service" class="form-label"
+                  >Услуга <span class="text-danger">*</span></label
+                >
+                <select
+                  class="form-select"
+                  id="service"
+                  name="service"
+                  required
+                >
+                  <option value="0">Акт обследования</option>
+                  <option value="1">Выдел</option>
+                  <option value="2">Вынос</option>
+                  <option value="3">Образование</option>
+                  <option value="4">Объединение</option>
+                  <option value="5">Перераспределение</option>
+                  <option value="6">Раздел</option>
+                  <option value="7">Технический план</option>
+                  <option value="8">Уточнение</option>
+                </select>
+              </div>
             </div>
-            <div class="card-body">
-                <form method="POST" id="add-client-form">
-                    <!-- Выбор услуги -->
-                    <div class="mb-4">
-                        <h5 class="text-primary"><i class="fas fa-cog"></i> Выбор предоставляемой услуги</h5>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <label for="service" class="form-label">Услуга <span class="text-danger">*</span></label>
-                                <select class="form-select" id="service" name="service" required>
-                                    <option value="0">Акт обследования</option>
-                                    <option value="1">Выдел</option>
-                                    <option value="2">Вынос</option>
-                                    <option value="3">Образование</option>
-                                    <option value="4">Объединение</option>
-                                    <option value="5">Перераспределение</option>
-                                    <option value="6">Раздел</option>
-                                    <option value="7">Технический план</option>
-                                    <option value="8">Уточнение</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+          </div>
 
-                    <!-- Адрес -->
-                    <div class="mb-4">
-                        <h5 class="text-primary"><i class="fas fa-map-marker-alt"></i> Адрес работ</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="city" class="form-label">Населенный пункт <span class="text-danger">*</span></label>
-                                <select class="form-select" id="city" name="city" required>
-                                    {% for city in cities %}
-                                    <option value="{{ city.id }}">{{ city.city_name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="address" class="form-label">Адрес <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="address" name="address" 
-                                       placeholder="улица, дом" required>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-md-6">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCity()">
-                                    <i class="fas fa-plus"></i> Добавить нас.пункт
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Личные данные -->
-                    <div class="mb-4">
-                        <h5 class="text-primary"><i class="fas fa-user"></i> Личные данные</h5>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label for="sur_name" class="form-label">Фамилия <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="sur_name" name="sur_name" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="name" class="form-label">Имя <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="name" name="name" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="middle_name" class="form-label">Отчество</label>
-                                <input type="text" class="form-control" id="middle_name" name="middle_name">
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <label for="telefone" class="form-label">Телефон</label>
-                                <input type="tel" class="form-control" id="telefone" name="telefone" 
-                                       placeholder="89216734503" pattern="[0-9]{11}" maxlength="11">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Дополнительная информация -->
-                    <div class="mb-4">
-                        <h5 class="text-primary"><i class="fas fa-info-circle"></i> Дополнительная информация</h5>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <label for="info" class="form-label">Особые заметки</label>
-                                <textarea class="form-control" id="info" name="info" rows="3" 
-                                          placeholder="Дополнительная информация о клиенте или заказе..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Кнопки -->
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary me-md-2">
-                            <i class="fas fa-times"></i> Отмена
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Добавить клиента
-                        </button>
-                    </div>
-                </form>
+          <!-- Адрес -->
+          <div class="mb-4">
+            <h5 class="text-primary">
+              <i class="fas fa-map-marker-alt"></i> Адрес работ
+            </h5>
+            <div class="row">
+              <div class="col-md-6">
+                <label for="city" class="form-label"
+                  >Населенный пункт <span class="text-danger">*</span></label
+                >
+                <select class="form-select" id="city" name="city" required>
+                  {% for city in cities %}
+                  <option value="{{ city.id }}">{{ city.city_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="address" class="form-label"
+                  >Адрес <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="address"
+                  name="address"
+                  placeholder="улица, дом"
+                  required
+                />
+              </div>
             </div>
-        </div>
+          </div>
+
+          <!-- Личные данные -->
+          <div class="mb-4">
+            <h5 class="text-primary">
+              <i class="fas fa-user"></i> Личные данные
+            </h5>
+            <div class="row">
+              <div class="col-md-4">
+                <label for="sur_name" class="form-label"
+                  >Фамилия <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="sur_name"
+                  name="sur_name"
+                  required
+                />
+              </div>
+              <div class="col-md-4">
+                <label for="name" class="form-label"
+                  >Имя <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="name"
+                  name="name"
+                  required
+                />
+              </div>
+              <div class="col-md-4">
+                <label for="middle_name" class="form-label">Отчество</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="middle_name"
+                  name="middle_name"
+                />
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <label for="telefone" class="form-label">Телефон</label>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="telefone"
+                  name="telefone"
+                  placeholder="89216734503"
+                  pattern="[0-9]{11}"
+                  maxlength="11"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Дополнительная информация -->
+          <div class="mb-4">
+            <h5 class="text-primary">
+              <i class="fas fa-info-circle"></i> Дополнительная информация
+            </h5>
+            <div class="row">
+              <div class="col-md-12">
+                <label for="info" class="form-label">Особые заметки</label>
+                <textarea
+                  class="form-control"
+                  id="info"
+                  name="info"
+                  rows="3"
+                  placeholder="Дополнительная информация о клиенте или заказе..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Кнопки -->
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a
+              href="{{ url_for('main.index') }}"
+              class="btn btn-secondary me-md-2"
+            >
+              <i class="fas fa-times"></i> Отмена
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Добавить клиента
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Модальное окно для добавления города -->
 <div class="modal fade" id="addCityModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Добавить населенный пункт</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="new-city-name" class="form-label">Название населенного пункта</label>
-                    <input type="text" class="form-control" id="new-city-name" 
-                           placeholder="Введите название города/поселка">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" onclick="saveCityAndClose()">Добавить</button>
-            </div>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="new-city-name" class="form-label"
+            >Название населенного пункта</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="new-city-name"
+            placeholder="Введите название города/поселка"
+          />
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Отмена
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="saveCityAndClose()"
+        >
+          Добавить
+        </button>
+      </div>
     </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-// Маска для телефона
-document.getElementById('telefone').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
+  // Маска для телефона
+  document.getElementById("telefone").addEventListener("input", function (e) {
+    let value = e.target.value.replace(/\D/g, "");
     if (value.length > 11) value = value.slice(0, 11);
     e.target.value = value;
-});
+  });
 
-// Функция добавления города
-function addCity() {
-    $('#new-city-name').val('');
-    $('#addCityModal').modal('show');
-}
+  // Валидация формы
+  document
+    .getElementById("add-client-form")
+    .addEventListener("submit", function (e) {
+      const requiredFields = ["service", "city", "address", "sur_name", "name"];
+      let isValid = true;
 
-function saveCityAndClose() {
-    const cityName = $('#new-city-name').val().trim();
-    if (!cityName) {
-        alert('Введите название города');
-        return;
-    }
-    
-    // В реальном приложении здесь был бы AJAX запрос на сервер
-    // Пока просто добавляем в селект (это не сохранится в БД)
-    const citySelect = document.getElementById('city');
-    const option = document.createElement('option');
-    option.value = 'new_' + Date.now(); // временный ID
-    option.textContent = cityName;
-    option.selected = true;
-    citySelect.appendChild(option);
-    
-    $('#addCityModal').modal('hide');
-    
-    // Показываем предупреждение
-    alert('Внимание: Новый город добавлен только в текущую форму. Для постоянного сохранения обратитесь к администратору.');
-}
-
-// Валидация формы
-document.getElementById('add-client-form').addEventListener('submit', function(e) {
-    const requiredFields = ['service', 'city', 'address', 'sur_name', 'name'];
-    let isValid = true;
-    
-    requiredFields.forEach(function(fieldName) {
+      requiredFields.forEach(function (fieldName) {
         const field = document.getElementById(fieldName);
         if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            isValid = false;
+          field.classList.add("is-invalid");
+          isValid = false;
         } else {
-            field.classList.remove('is-invalid');
+          field.classList.remove("is-invalid");
         }
-    });
-    
-    if (!isValid) {
+      });
+
+      if (!isValid) {
         e.preventDefault();
-        alert('Пожалуйста, заполните все обязательные поля');
-    }
-});
+        alert("Пожалуйста, заполните все обязательные поля");
+      }
+    });
 
-// Автоматическое обновление названия папки при изменении данных
-function updateFolderPreview() {
-    const service = document.getElementById('service').selectedOptions[0]?.text || '';
-    const citySelect = document.getElementById('city');
-    const city = citySelect.selectedOptions[0]?.text || '';
-    const address = document.getElementById('address').value || '';
-    const surname = document.getElementById('sur_name').value || '';
-    
+  // Автоматическое обновление названия папки при изменении данных
+  function updateFolderPreview() {
+    const service =
+      document.getElementById("service").selectedOptions[0]?.text || "";
+    const citySelect = document.getElementById("city");
+    const city = citySelect.selectedOptions[0]?.text || "";
+    const address = document.getElementById("address").value || "";
+    const surname = document.getElementById("sur_name").value || "";
+
     if (service && city && address && surname) {
-        const folderPath = `${service}/${city}/${address} ${surname}`;
-        console.log('Папка будет создана:', folderPath);
+      const folderPath = `${service}/${city}/${address} ${surname}`;
+      console.log("Папка будет создана:", folderPath);
     }
-}
+  }
 
-// Обновляем предпросмотр при изменении полей
-['service', 'city', 'address', 'sur_name'].forEach(function(fieldId) {
-    document.getElementById(fieldId).addEventListener('change', updateFolderPreview);
-    document.getElementById(fieldId).addEventListener('input', updateFolderPreview);
-});
+  // Обновляем предпросмотр при изменении полей
+  ["service", "city", "address", "sur_name"].forEach(function (fieldId) {
+    document
+      .getElementById(fieldId)
+      .addEventListener("change", updateFolderPreview);
+    document
+      .getElementById(fieldId)
+      .addEventListener("input", updateFolderPreview);
+  });
 </script>
 {% endblock %}
