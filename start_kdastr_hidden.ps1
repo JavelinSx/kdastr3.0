@@ -1,0 +1,1 @@
+Start-Process -FilePath "D:\Kadastr\kdastr3.0-main\start_kadastr.bat" -WindowStyle Hidden

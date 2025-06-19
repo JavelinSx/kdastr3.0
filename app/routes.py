@@ -6,9 +6,185 @@ import os
 import shutil
 import subprocess
 import platform
+import socket
+import psutil
 
 bp = Blueprint('main', __name__)
 
+def get_network_info():
+    """Получение сетевой информации с приоритетом локальной сети"""
+    import socket
+    
+    network_info = {
+        'localhost': '127.0.0.1',
+        'network_addresses': [],
+        'is_accessible_from_network': False,
+        'port': 5000
+    }
+    
+    print("🔍 get_network_info: Начинаем работу")
+    
+    try:
+        # Способ 1: Используем socket для получения всех IP
+        local_ips = []
+        
+        # Получаем IP через разные методы
+        methods = [
+            ("Google DNS", "8.8.8.8", 80),
+            ("Cloudflare DNS", "1.1.1.1", 80),
+            ("Router Gateway", "192.168.1.1", 80),
+            ("Router Gateway Alt", "192.168.0.1", 80)
+        ]
+        
+        for method_name, target_ip, port in methods:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.settimeout(1)  # Таймаут 1 секунда
+                s.connect((target_ip, port))
+                local_ip = s.getsockname()[0]
+                s.close()
+                
+                if local_ip and local_ip != '127.0.0.1' and local_ip not in local_ips:
+                    local_ips.append(local_ip)
+                    print(f"🔍 {method_name}: найден IP {local_ip}")
+                    
+            except Exception as e:
+                print(f"🔍 {method_name}: ошибка {e}")
+                continue
+        
+        # Способ 2: Если psutil доступен, используем его для дополнительной проверки
+        try:
+            import psutil
+            print("🔍 Используем psutil для дополнительной проверки")
+            
+            for interface_name, interface_addresses in psutil.net_if_addrs().items():
+                for address in interface_addresses:
+                    if address.family == socket.AF_INET:  # IPv4
+                        ip = address.address
+                        if (ip != '127.0.0.1' and 
+                            not ip.startswith('169.254') and  # Link-local
+                            ip not in local_ips):
+                            local_ips.append(ip)
+                            print(f"🔍 psutil {interface_name}: найден IP {ip}")
+        except ImportError:
+            print("🔍 psutil недоступен, используем только socket")
+        except Exception as e:
+            print(f"🔍 Ошибка psutil: {e}")
+        
+        # Сортируем IP по приоритету (локальная сеть первая)
+        def ip_priority(ip):
+            """Определяем приоритет IP адреса"""
+            if ip.startswith('192.168.'):
+                return 1  # Высший приоритет
+            elif ip.startswith('10.'):
+                return 2  # Средний приоритет
+            elif ip.startswith('172.'):
+                if 16 <= int(ip.split('.')[1]) <= 31:
+                    return 2  # Частная сеть 172.16-31.x.x
+                return 3
+            else:
+                return 3  # Низкий приоритет
+        
+        # Сортируем IP по приоритету
+        local_ips_sorted = sorted(set(local_ips), key=ip_priority)
+        print(f"🔍 Найденные IP (отсортированные): {local_ips_sorted}")
+        
+        # Добавляем IP адреса в результат
+        for ip in local_ips_sorted:
+            interface_name = "Primary Network"
+            
+            # Определяем тип сети
+            if ip.startswith('192.168.'):
+                interface_name = "Local Network (192.168.x.x)"
+            elif ip.startswith('10.'):
+                interface_name = "Corporate/VPN Network (10.x.x.x)"
+            elif ip.startswith('172.'):
+                if 16 <= int(ip.split('.')[1]) <= 31:
+                    interface_name = "Private Network (172.16-31.x.x)"
+            
+            network_info['network_addresses'].append({
+                'interface': interface_name,
+                'ip': ip,
+                'url': f'http://{ip}:5000'
+            })
+        
+        # Проверяем доступность в сети
+        try:
+            from flask import current_app
+            host = current_app.config.get('HOST', '127.0.0.1')
+            print(f"🔍 Flask HOST = {host}")
+            
+            if host == '0.0.0.0':
+                network_info['is_accessible_from_network'] = True
+                print("✅ Приложение доступно в сети (HOST=0.0.0.0)")
+            elif host in local_ips_sorted:
+                network_info['is_accessible_from_network'] = True
+                print(f"✅ Приложение доступно в сети (HOST={host})")
+            else:
+                print(f"⚠️ Приложение только локально (HOST={host})")
+                
+        except Exception as e:
+            print(f"🔍 Ошибка проверки HOST: {e}")
+        
+        print(f"🔍 Итого найдено IP адресов: {len(network_info['network_addresses'])}")
+        
+    except Exception as e:
+        print(f"🔍 Общая ошибка: {e}")
+    
+    print(f"🔍 Возвращаем: {network_info}")
+    return network_info
+
+# Обновите функцию settings() в routes.py
+
+@bp.route('/settings')
+def settings():
+    """Страница настроек"""
+    from flask import current_app
+    import os
+    
+    print("🔍 ОТЛАДКА: Начинаем функцию settings()")
+    
+    # Получаем текущие настройки
+    current_settings = {
+        'database_path': current_app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('sqlite:///', ''),
+        'work_folder': current_app.config.get('WORK_FOLDER', './work_files'),
+        'docs_folder': current_app.config.get('DOCS_FOLDER', './docs'),
+        'host': current_app.config.get('HOST', '127.0.0.1'),
+        'port': current_app.config.get('PORT', 5000)
+    }
+    
+    # Проверяем существование путей и ПРЕОБРАЗУЕМ WindowsPath в строки
+    path_status = {}
+    for key, path in current_settings.items():
+        if key in ['host', 'port']:
+            continue
+            
+        if path and path != '':
+            abs_path = os.path.abspath(path)
+            path_status[key] = {
+                'exists': os.path.exists(abs_path),
+                'is_dir': os.path.isdir(abs_path) if os.path.exists(abs_path) else False,
+                'abs_path': str(abs_path),  # ПРЕОБРАЗУЕМ в строку
+                'writable': os.access(abs_path, os.W_OK) if os.path.exists(abs_path) else False
+            }
+        else:
+            path_status[key] = {
+                'exists': False,
+                'is_dir': False,
+                'abs_path': '',
+                'writable': False
+            }
+    
+    # Получаем сетевую информацию
+    print("🔍 ОТЛАДКА: Вызываем get_network_info()")
+    network_info = get_network_info()
+    print(f"🔍 ОТЛАДКА: network_info = {network_info}")
+    
+    print("🔍 ОТЛАДКА: Передаем данные в render_template")
+    return render_template('settings.html', 
+                         settings=current_settings, 
+                         path_status=path_status,
+                         network_info=network_info)
 def simple_fuzzy_match(text1, text2, threshold=80):
     """Простая реализация нечеткого поиска без rapidfuzz"""
     text1 = text1.lower().strip()
@@ -763,6 +939,7 @@ def add_city():
         return jsonify({'success': False, 'message': f'Ошибка: {str(e)}'})
 
 def create_client_folder(client, city, address, move_from=None):
+    print("🚀 ОТЛАДКА: Вызвана функция settings()")
     """Создание папки для клиента с автоматическим копированием документов"""
     from flask import current_app
     from app.document_service import document_service
@@ -821,42 +998,6 @@ def create_client_folder(client, city, address, move_from=None):
             print(f"❌ Ошибка при копировании документов: {e}")
     
     return abs_folder_path
-
-@bp.route('/settings')
-def settings():
-    """Страница настроек"""
-    from flask import current_app
-    import os
-    
-    # Получаем текущие настройки (убрали upload_folder)
-    current_settings = {
-        'database_path': current_app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('sqlite:///', ''),
-        'work_folder': current_app.config.get('WORK_FOLDER', './work_files'),
-        'docs_folder': current_app.config.get('DOCS_FOLDER', './docs')
-    }
-    
-    # Проверяем существование путей
-    path_status = {}
-    for key, path in current_settings.items():
-        if path and path != '':
-            abs_path = os.path.abspath(path)
-            path_status[key] = {
-                'exists': os.path.exists(abs_path),
-                'is_dir': os.path.isdir(abs_path) if os.path.exists(abs_path) else False,
-                'abs_path': abs_path,
-                'writable': os.access(abs_path, os.W_OK) if os.path.exists(abs_path) else False
-            }
-        else:
-            path_status[key] = {
-                'exists': False,
-                'is_dir': False,
-                'abs_path': '',
-                'writable': False
-            }
-    
-    return render_template('settings.html', 
-                         settings=current_settings, 
-                         path_status=path_status)
 
 @bp.route('/settings', methods=['POST'])
 def settings_post():
